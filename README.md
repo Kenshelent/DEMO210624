@@ -8,7 +8,7 @@
 
 1.	Создаем виртуальные машины. Все устройства Ubuntu Server, исключая SRV устройства, которые являются Ubuntu Desktop.
 2.	Распределяем сетевые адаптеры (везде сетевые мосты + адаптеры, смотрящие на ближайших соседей). 
- ![Адаптеры](https://github.com/Kenshelent/DEMO210624/blob/main/%D0%A0%D0%B8%D1%81%D1%83%D0%BD%D0%BE%D0%BA2.png)
+ ![Адаптеры](https://github.com/Kenshelent/DEMO210624/blob/main/%D0%A1%D0%B5%D1%82%D0%B5%D0%B2%D1%8B%D0%B5%20%D0%B0%D0%B4%D0%B0%D0%BF%D1%82%D0%B5%D1%80%D1%8B.png)
 3.	Присваиваем имена хостов, имена устройств в соответствии с условиями:
  
 
@@ -22,7 +22,7 @@
 
 1.	Присваиваем IP-адреса, маски и шлюзы адаптерам в соответствии с таблицей (заполняя таблицу, указываем имя адаптера на данном устройстве и 4 последних символа MAC):
 
-![Таблица IP](https://github.com/Kenshelent/DEMO210624/blob/main/%D0%A0%D0%B8%D1%81%D1%83%D0%BD%D0%BE%D0%BA4.png)
+![Таблица IP](https://github.com/Kenshelent/DEMO210624/blob/main/%D0%A2%D0%B0%D0%B1%D0%BB%D0%B8%D1%86%D0%B0%20%D0%BC%D0%B0%D1%80%D1%88%D1%80%D1%83%D1%82%D0%B8%D0%B7%D0%B0%D1%86%D0%B8%D0%B8.png)
  
 
 2.	Загрузившись в операционную среду, приступаем к настройке. Данные действия выполняются на устройствах ISP, HQ-R, BR-R. 
@@ -44,6 +44,8 @@ sudo reboot
 ```
 Sudo nano /etc/netplan/<tab>
  ```
+![NETPLAN](https://github.com/Kenshelent/DEMO210624/blob/main/%D0%A4%D0%B0%D0%B9%D0%BB%20netplan.png)
+
 
 ### Настраиваем NAT на ISP
 ```
