@@ -18,7 +18,8 @@
 
 <summary>Задание 1. NAT</summary>
 
-### #natnanate
+### #natnanatenanatenanatenanatenanatenanatenanatenanatenanatenanatenanatenanatenanatenanatenanatenanatenanatenanatenanatenanatenanatenanatenanatenanate
+
 
 1.	Присваиваем IP-адреса, маски и шлюзы адаптерам в соответствии с таблицей (заполняя таблицу, указываем имя адаптера на данном устройстве и 4 последних символа MAC):
 
