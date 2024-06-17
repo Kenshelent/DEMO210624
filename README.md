@@ -358,4 +358,21 @@ hq-srv$ systemctl restart sshd
 ssh hq-srv@<IP-BR-R> -p 2222 # Проверка с устройства. Вы должны согласиться с ключом и зайти в hq-srv
 ```
 
+
 </details>
+
+<details>
+
+<summary>Задание 8. CLI BLOCK</summary>
+
+### НА ISP
+```
+iptables -A FORWARD -s 3.3.3.0/30 -p tcp --dport 2222 -j DROP 
+```
+### НА HQ-R
+```
+iptables -A FORWARD -s 4.4.4.0/30 -p tcp --dport 2222 -j DROP 
+```
+</details>
+
+
