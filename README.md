@@ -348,11 +348,14 @@ nano /etc/ssh/sshd_config
 ```
 #PermitRootLogin yes
 ```
+Перезапуск служб
+```
 hq-srv$ systemctl enable sshd
 hq-srv$ systemctl restart sshd
 ```
 ### ПРОВЕРКА
-ssh hq-srv@<IP-BR-R> -p 2222 # Проверка с устройства. Вы должны согласиться с ключом и зайти в shell hq-srv
-
+```
+ssh hq-srv@<IP-BR-R> -p 2222 # Проверка с устройства. Вы должны согласиться с ключом и зайти в hq-srv
+```
 
 </details>
