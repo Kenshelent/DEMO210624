@@ -228,7 +228,7 @@ sudo usermod -aG sudo network_admin
 
 <details>
 
-<summary>Задание 5. Пропусканя способность</summary>
+<summary>Задание 5. Пропускная способность</summary>
 
 ### Выполнять на ISP, HQ-R
 ```
