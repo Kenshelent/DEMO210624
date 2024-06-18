@@ -173,7 +173,8 @@ option domain-name "hq.work";
 option domain-name-servers 172.16.100.2, 8.8.8.8; 
 Пул IP-адресов 
 subnet 172.16.100.0 netmask 255.255.255.192 { 
-range 172.16.100.5 172.16.100.20; 
+range 172.16.100.5 172.16.100.20;
+option broadcast-address 172.16.100.63;
 option routers 172.16.100.1; 
 } 
 Резервация IP-адреса
