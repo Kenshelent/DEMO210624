@@ -186,6 +186,14 @@ hardware ethernet <xx:xx:xx:xx:xx:xx>; mac на hq-srv
 fixed-address 172.16.100.2; 
 } 
 ```
+
+Перейти в файл sudo nano /etc/default/isc-dhcp-server
+
+```
+INTERFACESv4="Интерфейс на локальную сеть  HQ-SRV"
+INTERFACESv6=""
+```
+
 После внесения изменений перезапустите DHCP сервер для применения новых настроек: 
 ```
 sudo systemctl restart isc-dhcp-server
