@@ -253,7 +253,7 @@ iperf3 -s
 ```
 ### Выполнять на HQ-R
 ```
-iperf3 -c 1.1.1.2
+iperf3 -c 1.1.1.1
 ```
 
 ![Пример](https://github.com/Kenshelent/DEMO210624/blob/main/%D0%92%D1%8B%D0%BF%D0%BE%D0%BB%D0%BD%D0%B5%D0%BD%D0%B8%D0%B5%20iperf3.png)
@@ -298,12 +298,12 @@ sudo mkdir -p "/etc/backup"
 ```
 Перейти в эту папку.
 ```
-sudo cd /etc/backup
+cd /etc/backup
 ```
 Создание скрипта:
 Создайте новый файл скрипта. 
 ```
-nano backup.sh
+sudo nano backup.sh
 ```
 Редактирование скрипта:
 ```
@@ -366,7 +366,6 @@ hq-srv$ systemctl restart sshd
 ```
 ssh hq-srv@<IP-HQ-SRV> -p 2222 # Проверка с устройства. Вы должны согласиться с ключом и зайти в hq-srv
 ```
-
 
 </details>
 
