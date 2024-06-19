@@ -349,10 +349,6 @@ HQ-R$ iptables -t nat -A PREROUTING -i <ИНТЕРФЕЙС> -j DNAT -p tcp --dpo
 sudo apt-get install openssh-server
 nano /etc/ssh/sshd_config
 ```
-Изменить
-```
-#PermitRootLogin yes
-```
 Перезапуск служб
 ```
 hq-srv$ systemctl enable sshd
