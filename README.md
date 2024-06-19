@@ -132,7 +132,8 @@ write
 # Настройка FFR для HQ-R: 
 ```
 enable 
-configure terminal 
+configure terminal
+ip forwarding 
 router-id 1.1.1.2
 router ospf
 network 1.1.1.0/30 area 0
@@ -144,7 +145,8 @@ write
 # Настройка FFR для BR-R:
 ``` 
 enable 
-configure terminal 
+configure terminal
+ip forwarding 
 router-id 2.2.2.2
 router ospf
 network 2.2.2.0/30 area 0 
