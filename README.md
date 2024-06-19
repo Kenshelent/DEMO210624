@@ -4,12 +4,13 @@
 
 <summary>Подготовка</summary>
 
-### Этап подготовки
+### Настройка машин
 
-1.	Создаем виртуальные машины. Все устройства Ubuntu Server, исключая SRV устройства, которые являются Ubuntu Desktop.
-2.	Распределяем сетевые адаптеры (везде сетевые мосты + адаптеры, смотрящие на ближайших соседей). 
- ![Адаптеры](https://github.com/Kenshelent/DEMO210624/blob/main/%D0%A1%D0%B5%D1%82%D0%B5%D0%B2%D1%8B%D0%B5%20%D0%B0%D0%B4%D0%B0%D0%BF%D1%82%D0%B5%D1%80%D1%8B.png)
-3.	Присваиваем имена хостов, имена устройств в соответствии с условиями:
+Создаем виртуальные машины. Все устройства Ubuntu Server, исключая SRV устройства, которые являются Ubuntu Desktop.
+
+Распределяем сетевые адаптеры (везде сетевые мосты + адаптеры, смотрящие на ближайших соседей). 
+ ![Адаптеры](https://github.com/Kenshelent/DEMO210624/blob/main/%D0%A1%D0%B5%D1%82%D0%B5%D0%B2%D1%8B%D0%B5%20%D0%B0%D0%B4%D0%B0%D0%BF%D1%82%D0%B5%D1%80%D1%8B.png) <br>
+Присваиваем имена хостов, имена устройств в соответствии с условиями.
  
 
 </details>
@@ -18,15 +19,14 @@
 
 <summary>Задание 1. NAT</summary>
 
-### #natnanatenanatenanatenanatenanatenanatenanatenanatenanatenanatenanatenanatenanatenanatenanatenanatenanatenanatenanatenanatenanatenanatenanatenanate
+### #natnanate
 
-
-1.	Присваиваем IP-адреса, маски и шлюзы адаптерам в соответствии с таблицей (заполняя таблицу, указываем имя адаптера на данном устройстве и 4 последних символа MAC):
+Присваиваем IP-адреса, маски и шлюзы адаптерам в соответствии с таблицей (заполняя таблицу, указываем имя адаптера на данном устройстве и 4 последних символа MAC):
 
 ![Таблица IP](https://github.com/Kenshelent/DEMO210624/blob/main/%D0%A2%D0%B0%D0%B1%D0%BB%D0%B8%D1%86%D0%B0%20%D0%BC%D0%B0%D1%80%D1%88%D1%80%D1%83%D1%82%D0%B8%D0%B7%D0%B0%D1%86%D0%B8%D0%B8.png)
  
 
-2.	Загрузившись в операционную среду, приступаем к настройке. Данные действия выполняются на устройствах ISP, HQ-R, BR-R. 
+### Данные действия выполняются на устройствах ISP, HQ-R, BR-R. 
 Делаем проброс портов. Для этого переходим в файл командой
 ```
 sudo nano /etc/sysctl.conf
@@ -36,14 +36,19 @@ sudo nano /etc/sysctl.conf
 net.ipv4.ip_forward=1 			для IPv4
 net.ipv6.conf.all.forwarding=1 		для IPv6
 ```
-Сохраняем файл и выходим. Перезагружаем устройства командой
+Сохраняем файл и выходим и пишем.
 ```
-sudo reboot
+sudo sysctl -p
 ```
-После перезагрузки проверяем, видят ли машины (HQ-R-ISP и BR-R-ISP) друг друга командой ping
+Если метод не сработал можно попробовать 
+```
+sudo sysctl -w net.ipv4.ip_forward=1
+```
+
+Проверяем видят ли машины (HQ-R-ISP и BR-R-ISP) друг друга командой ping <br>
 если не работает, то редактируем настройки конфигурации адаптеров в файле
 ```
-Sudo nano /etc/netplan/<tab>
+Sudo nano /etc/netplan/название файла(оно разное)
  ```
 ![NETPLAN](https://github.com/Kenshelent/DEMO210624/blob/main/%D0%A4%D0%B0%D0%B9%D0%BB%20netplan.png)
 
@@ -66,7 +71,6 @@ sudo netfilter-persistent save
 ```
 sudo ip link set <интерфейс> down
 ```
-
 Проверяем, пингуется ли 8.8.8.8 с них. Скорее всего, ping 8.8.8.8 сработает, но ping ya.ru покажет ошибку в разрешении имен. Для решения данной проблемы нам требуется перейти в файл
 ```
 sudo nano /etc/systemd/resolved.conf
@@ -82,11 +86,10 @@ Sudo systemctl restart systemd-resolved
 
 Проверяем, пингуется ли 8.8.8.8 или ya.ru с HQ-R и BR-R. Если всё успешно, то можем окончательно убрать сетевые мосты c HQ-R и BR-R из адаптеров VirtualBox.
 
-Для SRV устройств просто указываем IP, gateway и DNS 8.8.8.8. Делаем это обязательно в nmtui. Если что-то пошло не так, удаляем файлы конфигов
+Для SRV устройств просто указываем IP, gateway и DNS 8.8.8.8. Делать это желательно в nmtui. Если что-то пошло не так, удаляем файлы конфигов
 ```
 sudo rm /etc/netplan/*
 ```
-
 </details>
 
 <details>
@@ -279,7 +282,7 @@ iperf3 -c 1.1.1.2
 
 # Скриптики
 
-Создание backup скрипта на Ubuntu Server для автоматизации процесса копирования файлов и директорий может быть очень полезным. <br>
+Создание backup скрипта на Ubuntu Server для автоматизации процесса копирования файлов <br>
 Вот пример простого bash-скрипта для выполнения резервного копирования: <br>
 # Создайте директорию для резервного копирования
 ```
@@ -329,7 +332,7 @@ crontab -e
 
 <summary>Задание 7. SSH</summary>
 
-### ЛИЗА ТВОЙ ВЫХОД
+### IPTABLES
 
 ```
 HQ-R$ iptables -t nat -A PREROUTING -i <ИНТЕРФЕЙС> -j DNAT -p tcp --dport 2222 --to-destination <IP HQ-R>:22
@@ -376,5 +379,4 @@ iptables -A FORWARD -s 3.3.3.0/30 -p tcp --dport 2222 -j DROP
 iptables -A FORWARD -s 4.4.4.0/30 -p tcp --dport 2222 -j DROP 
 ```
 </details>
-
 
