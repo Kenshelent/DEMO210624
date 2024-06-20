@@ -357,7 +357,7 @@ crontab -e
 ### IPTABLES
 
 ```
-HQ-R$ iptables -t nat -A PREROUTING -i <ИНТЕРФЕЙС> -j DNAT -p tcp --dport 2222 --to-destination <IP HQ-SRV>:22
+HQ-R$ iptables -t nat -A PREROUTING -i <ИНТЕРФЕЙС СМОТРЯЩИЙ В ISP> -j DNAT -p tcp --dport 2222 --to-destination <IP HQ-SRV>:22
 ```
 
 Пример сценария:
