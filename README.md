@@ -332,6 +332,10 @@ echo "OK"
 ```
 sudo chmod +x backup.sh
 ```
+Выходим из директории
+```
+cd
+```
 Запуск скрипта:
 ```
 sudo ./backup.sh
