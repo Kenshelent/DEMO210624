@@ -765,6 +765,7 @@ sudo nano /var/www/html/lms/index.html
 Эти шаги помогут вам настроить веб-сервер Apache и базу данных MySQL для вашего LMS
 </details>
 
+### Модуль 3
 
 <details>
 
