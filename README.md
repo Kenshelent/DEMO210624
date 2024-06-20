@@ -373,8 +373,8 @@ nano /etc/ssh/sshd_config
 ```
 Перезапуск служб
 ```
-hq-srv$ systemctl enable sshd
-hq-srv$ systemctl restart sshd
+hq-srv$ systemctl enable ssh
+hq-srv$ systemctl restart ssh
 ```
 ### ПРОВЕРКА
 ```
