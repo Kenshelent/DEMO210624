@@ -546,6 +546,67 @@ nslookup 172.16.100.1(Соответствующее доменное имя: hq
 ping br-r.branch.work (Соответствующий IP-адрес: 192.168.100.1)
 nslookup 192.168.100.1 (Соответствующее доменное имя: br-r.branch.work)
 ```
+
+### Настройка DNS-форвардинга на BIND
+
+Редактирование конфигурации BIND для включения форвардинга:
+
+Откройте файл /etc/bind/named.conf.options для редактирования:
+```
+sudo nano /etc/bind/named.conf.options
+```
+Добавьте форвардинг DNS-запросов к внешним DNS-серверам:
+
+Найдите секцию options и добавьте следующие строки:
+```
+options {
+    directory "/var/cache/bind";
+
+    // For security purposes, BIND should run as a non-root user.
+    // Uncomment the following line and specify the user and group.
+    // user bind;
+    // group bind;
+
+    // If there is a firewall between you and nameservers you want
+    // to talk to, you might need to uncomment the query-source
+    // directive below.  Previous versions of BIND always asked
+    // questions using port 53, but BIND 8.1 uses an unprivileged
+    // port by default.
+    // query-source address * port 53;
+
+    // If your name server is behind a firewall, you might need to specify the ports
+    // that the server can use to make queries. See the "open-ended" list of options
+    // for more information.
+    // query-source-v6 address * port 53;
+
+    // forwarders for external DNS requests
+    forwarders {
+        8.8.8.8;  // Google DNS
+        8.8.4.4;  // Google DNS
+    };
+
+    // Disable recursion for external queries
+    allow-recursion {
+        any;
+    };
+
+    // If you want to allow only specific clients to query your nameserver,
+    // you can specify their IP addresses here.
+    // allow-query { 192.168.0.0/24; };
+
+    dnssec-validation auto;
+
+    auth-nxdomain no;    # conform to RFC1035
+    listen-on-v6 { any; };
+};
+```
+В этом примере мы настроили DNS-сервер для перенаправления запросов к внешним DNS-серверам Google (8.8.8.8 и 8.8.4.4) для тех имен, которые он не может разрешить локально.
+
+Перезапустите сервис BIND для применения изменений:
+
+```
+sudo systemctl restart bind9
+```
 </details>
 
 
