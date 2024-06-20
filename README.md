@@ -764,3 +764,394 @@ sudo nano /var/www/html/lms/index.html
 Откройте браузер и перейдите по адресу вашего сервера (например, http://br-srv или http://localhost/lms). Вы должны увидеть номер места на главной странице.
 Эти шаги помогут вам настроить веб-сервер Apache и базу данных MySQL для вашего LMS
 </details>
+
+
+<details>
+
+<summary>Задание 1. Rsyslog</summary>
+
+### На клиентской машине (в самом задании на всех):
+
+
+Установка Rsyslog: Выполните команду для установки rsyslog:
+```
+sudo apt-get install rsyslog
+```
+Настройка Rsyslog для прослушивания сетевых сообщений: Откройте файл конфигурации rsyslog для редактирования:
+```
+sudo nano /etc/rsyslog.conf
+```
+Раскомментируйте строки для включения модулей UDP и TCP:
+```
+module(load="imudp")
+input(type="imudp" port="514")
+module(load="imtcp")
+input(type="imtcp" port="514")
+```
+Настройка отправки логов на сервер hq-srv: В том же файле /etc/rsyslog.conf добавьте следующую строку:
+```
+*.* @<ip hq srv>:514
+```
+Перезапуск службы rsyslog: Перезапустите службу rsyslog для применения изменений:
+```
+sudo systemctl restart rsyslog
+```
+Проверка отправки логов: Убедитесь, что логи отправляются корректно, с помощью команды:
+```
+sudo tail -f /var/log/syslog
+```
+
+### На сервере (hq-srv):
+Установка Rsyslog: Установите rsyslog, если он еще не установлен:
+```
+sudo apt-get install rsyslog
+```
+Настройка Rsyslog для приема сетевых сообщений: Откройте файл конфигурации rsyslog для редактирования:
+```
+sudo nano /etc/rsyslog.conf
+```
+Раскомментируйте строки для включения модулей UDP и TCP:
+```
+module(load="imudp")
+input(type="imudp" port="514")
+module(load="imtcp")
+input(type="imtcp" port="514")
+```
+Перезапуск службы rsyslog: Перезапустите службу rsyslog для применения изменений:
+```
+sudo systemctl restart rsyslog
+```
+Проверка получения логов: Проверьте, что сервер получает логи от клиента, с помощью команды:
+```
+sudo tail -f /var/log/syslog
+```
+Проверка работы: Отправьте тестовое сообщение с удаленного хоста: 
+```
+logger "Test message from client"
+```
+
+</details>
+
+<details>
+
+<summary>Задание 2. Центр Сертификации</summary>
+
+###  на HQ-SRV
+Установите Openssl на каждом устройстве
+```
+sudo apt-get update
+sudo apt-get upgrade -y
+sudo apt-get install openssh (уже вероятно установлен)
+sudo apt-get install openssh-server (для того, чтобы при передаче файлов подключаться по ssh к устройствам)
+```
+### Настройки на HQ-SRV
+Создаем корневой сертификат
+```
+sudo openssl genrsa -des3 -out myCA.key 2048
+```
+Вводим парольную фразу, простую т.к. ее писать придется много раз !НО МИНИМУМ 4 СИМВОЛА!*
+```
+sudo openssl req -x509 -new -nodes -key myCA.key -sha256 -days 1825 -out myCA.pem
+```
+Вводим парольную фразу и заполняем данные
+Создаем самоподписный сертификат, устанавливаем срок его действия на 1024 дня. 
+```
+sudo ssh-keygen -t rsa -b 2048 -f ssh_host_rsa_key
+```
+Далее создаем webserver.key - Приватный ключ RSA длиной 4096 бит, который будет использоваться веб-сервером для шифрования и дешифрования трафика. А также файл webserver.csr: Запрос на подпись сертификата, который содержит публичную часть ключа и информацию о сервере (например, доменное имя, организация, страна и т.д.). Этот файл используется для получения сертификата от центра сертификации (CA).
+```
+sudo openssl req -newkey rsa:2048 -nodes -keyout webserver.key -out webserver.csr
+```
+Создаем самоподписанный сертификат, используя указанный приватный ключ.
+```
+sudo openssl req -x509 -new -nodes -key myCA.key -sha256 -days 1024 -out myCA.pem
+```
+Создаем сертификат
+```
+sudo openssl x509 -req -in webserver.csr -CA myCA.pem -CAkey myCA.key -CAcreateserial -out webserver.crt -days 365 -sha256
+```
+### ВАЖНО!
+
+Копируем ключ.pub c сервера на котором находится центр сертификации во все хосты (HQ-SRV).
+```
+sudo scp ssh_host_rsa_key.pub br-srv@192.168.100.10:~
+```
+br-srv@192.168.100.10:~ - копирует на название@адрес машины:~( этот символ = домашняя директория)
+
+где мы указываем логин_на_машине@ip_машины:~
+
+
+</details>
+
+
+<details>
+
+<summary>Задание 3. SSH 2</summary>
+
+Установка SSH-сервера (на сервере)
+Установка OpenSSH:
+```
+sudo apt install ssh
+```
+Проверка состояния SSH-сервера:
+```
+sudo systemctl status ssh
+```
+Создать banner
+```
+echo "Authorized access only!" | sudo tee /etc/ssh/banner
+```
+Переходим в файл sshd_config
+```
+sudo nano /etc/ssh/sshd_confing
+```
+Переведите на нестандартный порт:
+```
+Port 2222
+```
+Установите предел времени аутентификации до 5 минут: 
+```
+LoginGraceTime 5m 
+```
+Установите запрет на доступ root:
+```
+PermitRootLogin no 
+```
+Ограничьте ввод попыток до 4:
+```
+MaxAuthTries 4 
+```
+Для авторизации по сертификату:
+```
+PubkeyAuthentication yes
+AuthorizedKeysFile /home/hq-srv/ssh_host_rsa_key.pub
+```
+Если это не десктоп версия, то из корневого каталога пишем ls и вероятно, данный файл будет там один
+Отключите аутентификацию по паролю:
+```
+PasswordAuthentication no 
+```
+Отключите пустые пароли:
+```
+PermitEmptyPasswords no 
+```
+Banner:
+```
+Banner /etc/ssh/banner
+```
+После внесения всех изменений, перезапустите SSH службу, чтобы применить новые настройки:
+```
+sudo systemctl restart ssh
+```
+Подключение с указанием ключа:
+```
+sudo ssh -i /путь user@ip_remote_host
+```
+ОБЯЗАТЕЛЬНО SUDO | Путь вида /home/hq-srv/ssh_host_rsa_key.pub
+
+
+</details>
+
+<details>
+
+<summary>Задание 5. Ограничения</summary>
+
+Настройте систему управления трафиком на роутере BR-R для контроля входящего трафика. ВСЕ ВВОДИМ ПО ПОРЯДКУ.
+
+# Разрешение подключений к портам DNS, HTTP и HTTPS
+```
+sudo iptables -A INPUT -p tcp --dport 53 -j ACCEPT
+sudo iptables -A INPUT -p udp --dport 53 -j ACCEPT
+sudo iptables -A INPUT -p tcp --dport 80 -j ACCEPT
+sudo iptables -A INPUT -p tcp --dport 443 -j ACCEPT
+```
+# Разрешение работы протоколов ICMP
+```
+sudo iptables -A INPUT -p icmp -j ACCEPT
+```
+# Разрешение работы протокола SSH
+```
+sudo iptables -A INPUT -p tcp --dport 22 -j ACCEPT
+sudo iptables -A INPUT -p tcp --dport 2222 -j ACCEPT
+```
+# Разрешение работы gre (на всякий случай)
+```
+sudo iptables -A INPUT -p gre -j ACCEPT
+```
+# Разрешение уже установленных подключений и трафика на loopback интерфейсе (Чтобы ничего не сломалось)
+```
+sudo iptables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+sudo iptables -A INPUT -i lo -j ACCEPT
+```
+# Запрет всех прочих подключений
+```
+sudo iptables -P INPUT DROP
+sudo iptables -P FORWARD DROP
+sudo iptables -P OUTPUT ACCEPT
+sudo netfilter-persistent save
+```
+
+</details>
+
+<details>
+
+<summary>Задание 6. Принтер </summary>
+
+### LOCALHOST:631
+ADMINISTRATION -> LPD PRINTER -> lpd://localhost/Virtual_Printer
+
+Укажите название принтера, описание и месторасположение (по вашему усмотрению).
+Выберите драйвер для принтера.
+</details>
+
+<details>
+
+<summary>Задание 7. GRE туннель </summary>
+
+### Настройка GRE туннеля на HQ-R: 
+```
+sudo ip tunnel add gre1 mode gre local 1.1.1.2 remote 2.2.2.2 ttl 255
+sudo ip addr add 10.0.0.1/30 dev gre1
+sudo ip link set gre1 up
+```
+### Настройка GRE туннеля на BR-R: 
+```
+sudo ip tunnel add gre1 mode gre local 2.2.2.2 remote 1.1.1.2 ttl 255
+sudo ip addr add 10.0.0.2/30 dev gre1
+sudo ip link set gre1 up
+```
+Добавление маршрутов для использования GRE туннеля:
+На HQ-R добавьте маршрут к внутренней сети BR-R через GRE туннель.
+```
+sudo ip route add 192.168.100.0/28 dev gre1
+```
+На BR-R добавьте маршрут к внутренней сети HQ-R через GRE туннель.
+```
+sudo ip route add 172.16.100.0/26 dev gre1
+```
+Проверка подключения:
+Проверьте туннель
+### На HQ-R
+```
+ping 10.0.0.2
+```
+### На BR-R
+```
+ping 10.0.0.1
+```
+
+</details>
+<details>
+
+<summary>Задание 8. Настройка скриптов мониторинга</summary>
+
+### Настройка скриптов мониторинга
+Создайте скрипт для проверки нагрузки процессора, оперативной памяти и заполненности диска.
+
+```
+sudo nano /usr/local/bin/system_monitor.sh
+```
+
+```
+#!/bin/bash
+
+CPU_THRESHOLD=70
+MEM_THRESHOLD=80
+DISK_THRESHOLD=85
+
+# Check CPU load
+CPU_LOAD=$(top -bn1 | grep "load average:" | awk '{print $10}' | sed 's/,//')
+CPU_LOAD_INT=${CPU_LOAD%.*}
+
+if [ "$CPU_LOAD_INT" -ge "$CPU_THRESHOLD" ]; then
+  logger -p user.warning "CPU load is $CPU_LOAD%"
+fi
+
+# Check Memory usage
+MEM_USAGE=$(free | grep Mem | awk '{print $3/$2 * 100.0}')
+MEM_USAGE_INT=${MEM_USAGE%.*}
+
+if [ "$MEM_USAGE_INT" -ge "$MEM_THRESHOLD" ]; then
+  logger -p user.warning "Memory usage is $MEM_USAGE%"
+fi
+
+# Check Disk usage
+DISK_USAGE=$(df -h / | grep / | awk '{ print $5 }' | sed 's/%//g')
+
+if [ "$DISK_USAGE" -ge "$DISK_THRESHOLD" ]; then
+  logger -p user.warning "Disk usage is $DISK_USAGE%"
+fi
+```
+Сделайте скрипт исполняемым:
+```
+sudo chmod +x /usr/local/bin/system_monitor.sh
+```
+Настройка cron для периодического выполнения скрипта
+Откройте crontab для редактирования:
+```
+sudo crontab -e
+```
+Добавьте следующую строку для запуска скрипта каждую минуту:
+```
+* * * * * /usr/local/bin/system_monitor.sh
+```
+Настройка rsyslog для отправки уведомлений
+Откройте файл конфигурации rsyslog:
+```
+sudo nano /etc/rsyslog.conf
+```
+Добавьте следующую строку, чтобы включить отправку предупреждений на syslog:
+```
+user.warning    /var/log/system_monitor.log
+```
+Перезапустите службу rsyslog для применения изменений:
+```
+sudo systemctl restart rsyslog
+```
+</details>
+
+<details>
+
+<summary>Задание 9. RAID</summary>
+
+
+Для настройки программного RAID 5 из дисков по 1 Гб на машине с Ubuntu Linux (BR-SRV), выполните следующие шаги:
+Предварительно нужно добавить диски на выключенной машине!
+
+Установите необходимые пакеты:
+```
+sudo apt-get update
+sudo apt-get install mdadm
+```
+Инициализация дисков: Предположим, что ваши диски распознаны как /dev/sdb, /dev/sdc, и /dev/sdd. Убедитесь, что эти диски не содержат важных данных и что они подготовлены для использования в RAID.
+Создайте RAID 5:
+```
+sudo mdadm --create --verbose /dev/md0 --level=5 --raid-devices=3 /dev/sdb /dev/sdc /dev/sdd
+```
+Проверьте статус RAID:
+```
+sudo mdadm --detail /dev/md0
+```
+Создайте файловую систему:
+```
+sudo mkfs.ext4 /dev/md0
+```
+Создайте точку монтирования и смонтируйте RAID:
+```
+sudo mkdir -p /mnt/raid5
+sudo mount /dev/md0 /mnt/raid5
+```
+Обновите /etc/fstab для автоматического монтирования: 
+Чтобы ваш RAID автоматически монтировался при загрузке системы, добавьте строку в файл /etc/fstab:
+```
+echo '/dev/md0 /mnt/raid5 ext4 defaults,nofail,discard 0 0' | sudo tee -a /etc/fstab
+```
+Настройте mdadm конфигурацию: 
+Обновите конфигурацию mdadm для сохранения настроек RAID массива:
+```
+sudo mdadm --detail --scan | sudo tee -a /etc/mdadm/mdadm.conf
+sudo update-initramfs -u
+```
+
+
+</details>
