@@ -397,3 +397,305 @@ iptables -A FORWARD -s 4.4.4.0/30 -p tcp --dport 2222 -j DROP
 ```
 </details>
 
+# Модуль 2
+<details>
+
+<summary>Задание 1. DNS-сервера</summary>
+
+
+### Делать на HQ-SRV 
+
+Установите пакет bind9
+```
+sudo apt install bind9
+```
+Настройте файл конфигурации BIND:
+```
+sudo nano /etc/bind/named.conf.local
+```
+Добавьте конфигурацию для зоны hq.work и обратной зоны:
+```
+
+zone "hq.work" {
+    type master;
+    file "/etc/bind/db.hq.work";
+};
+
+zone "16.172.in-addr.arpa" {
+    type master;
+    file "/etc/bind/db.172.16";
+};
+
+zone "branch.work" {
+    type master;
+    file "/etc/bind/db.branch.work";
+};
+
+zone "168.192.in-addr.arpa" {
+    type master;
+    file "/etc/bind/db.192.168";
+};
+
+```
+
+Создайте файлы зоны для hq.work:
+```
+sudo cp /etc/bind/db.local /etc/bind/db.hq.work
+sudo nano /etc/bind/db.hq.work
+```
+Измените содержимое файла на следующее:
+```
+$TTL    604800
+@       IN      SOA     ns.hq.work. admin.hq.work. (
+                         2         ; Serial
+                     604800         ; Refresh
+                      86400         ; Retry
+                    2419200         ; Expire
+                     604800 )       ; Negative Cache TTL
+;
+@       IN      NS      ns.hq.work.
+ns      IN      A       172.16.100.2
+hq-r    IN      A       172.16.100.1
+hq-srv  IN      A       172.16.100.2
+```
+Создайте файлы обратной зоны для hq.work:
+```
+sudo cp /etc/bind/db.127 /etc/bind/db.172.16
+sudo nano /etc/bind/db.172.16
+```
+Измените содержимое файла на следующее:
+```
+$TTL    604800
+@       IN      SOA     ns.hq.work. admin.hq.work. (
+                         2         ; Serial
+                     604800         ; Refresh
+                      86400         ; Retry
+                    2419200         ; Expire
+                     604800 )       ; Negative Cache TTL
+;
+@       IN      NS      ns.hq.work.
+1.100   IN      PTR     hq-r.hq.work.
+2.100   IN      PTR     hq-srv.hq.work.
+```
+Создайте файлы зоны для branch.work:
+```
+sudo cp /etc/bind/db.local /etc/bind/db.branch.work
+sudo nano /etc/bind/db.branch.work
+```
+Измените содержимое файла на следующее:
+```
+$TTL    604800
+@       IN      SOA     ns.branch.work. admin.branch.work. (
+                         2         ; Serial
+                     604800         ; Refresh
+                      86400         ; Retry
+                    2419200         ; Expire
+                     604800 )       ; Negative Cache TTL
+;
+@       IN      NS      ns.branch.work.
+ns      IN      A       192.168.100.2
+br-r    IN      A       192.168.100.1
+br-srv  IN      A       192.168.100.2
+```
+
+Создайте файлы обратной зоны для branch.work:
+```
+sudo cp /etc/bind/db.127 /etc/bind/db.192.168
+sudo nano /etc/bind/db.192.168
+```
+Измените содержимое файла на следующее:
+```
+$TTL    604800
+@       IN      SOA     ns.branch.work. admin.branch.work. (
+                         2         ; Serial
+                     604800         ; Refresh
+                      86400         ; Retry
+                    2419200         ; Expire
+                     604800 )       ; Negative Cache TTL
+;
+@       IN      NS      ns.branch.work.
+1.100   IN      PTR     br-r.branch.work.
+2.100   IN      PTR     br-srv.branch.work.
+```
+
+Перезапустите сервис BIND для применения изменений:
+```
+sudo systemctl restart bind9
+```
+Проверьте конфигурацию:
+Убедитесь, что конфигурация BIND не содержит ошибок:
+```
+sudo named-checkconf
+```
+Проверьте файлы зоны:
+```
+sudo named-checkzone hq.work /etc/bind/db.hq.work
+sudo named-checkzone 16.172.in-addr.arpa /etc/bind/db.172.16
+sudo named-checkzone branch.work /etc/bind/db.branch.work
+sudo named-checkzone 168.192.in-addr.arpa /etc/bind/db.192.168
+```
+
+С помощью DNS можно обращаться к серверам и устройствам по именам (например, hq-r.hq.work) вместо сложных для запоминания IP-адресов (например, 172.16.100.1).
+```
+ping hq-r.hq.work (Соответствующий IP-адрес: 172.16.100.1)
+nslookup 172.16.100.1(Соответствующее доменное имя: hq-r.hq.work)
+ping br-r.branch.work (Соответствующий IP-адрес: 192.168.100.1)
+nslookup 192.168.100.1 (Соответствующее доменное имя: br-r.branch.work)
+```
+</details>
+
+
+<details>
+
+<summary>Задание 2. NTP</summary>
+
+### на HQ-R
+```
+sudo apt-get install chrony -y
+sudo nano /etc/chrony/chrony.conf
+```
+Пишем в файл
+```
+server 127.0.0.1 iburst prefer:| server 127.0.0.1
+```
+указывает Chrony использовать локальный сервер времени с IP-адресом 127.0.0.1 (localhost).
+iburst: этот параметр заставляет Chrony посылать несколько (обычно четыре) запросов на начальной стадии синхронизации времени, чтобы ускорить процесс получения времени от сервера.
+prefer: указывает, что этот сервер должен быть предпочтительным, если доступно несколько серверов.
+```
+hwtimestamp *
+```
+Эта директива включает аппаратные временные метки на всех интерфейсах (* обозначает все интерфейсы). Аппаратные временные метки позволяют Chrony более точно определять время передачи и получения пакетов, что улучшает точность синхронизации.
+```
+local stratum 5
+```
+local: указывает Chrony работать как локальный сервер времени.
+stratum 5: задает стратиум (уровень) локального сервера времени. Стратиум определяет, насколько далеко сервер находится от эталонного источника времени. Чем ниже значение стратиума, тем ближе сервер к эталонному источнику времени. Значение 5 означает, что сервер времени не является эталонным и должен использоваться как временный источник при отсутствии других источников.
+```
+allow all
+```
+Эта директива позволяет всем сетям и устройствам синхронизировать время с данным Chrony сервером. По умолчанию Chrony может блокировать запросы от некоторых сетей, но эта настройка снимает все ограничения.
+
+
+</details>
+
+<details>
+
+<summary>Задание 5. Apache</summary>
+
+### на BR-SRV
+
+Для настройки веб-сервера Apache на сервере BR-SRV для LMS с использованием базы данных MySQL, выполните следующие шаги:
+1. Установка Apache и MySQL
+Сначала установим необходимые пакеты на сервере BR-SRV.
+```
+sudo apt install apache2 mysql-server -y
+```
+Затем войдем в MySQL и создадим базу данных и пользователей.
+```
+sudo mysql -u root -p
+```
+Внутри MySQL выполните следующие команды:
+```
+CREATE DATABASE lms_db;
+CREATE USER 'admin'@'localhost' IDENTIFIED BY 'P@ssw0rd';
+CREATE USER 'manager1'@'localhost' IDENTIFIED BY 'P@ssw0rd';
+CREATE USER 'manager2'@'localhost' IDENTIFIED BY 'P@ssw0rd';
+CREATE USER 'manager3'@'localhost' IDENTIFIED BY 'P@ssw0rd';
+CREATE USER 'user1'@'localhost' IDENTIFIED BY 'P@ssw0rd';
+CREATE USER 'user2'@'localhost' IDENTIFIED BY 'P@ssw0rd';
+CREATE USER 'user3'@'localhost' IDENTIFIED BY 'P@ssw0rd';
+CREATE USER 'user4'@'localhost' IDENTIFIED BY 'P@ssw0rd';
+CREATE USER 'user5'@'localhost' IDENTIFIED BY 'P@ssw0rd';
+CREATE USER 'user6'@'localhost' IDENTIFIED BY 'P@ssw0rd';
+CREATE USER 'user7'@'localhost' IDENTIFIED BY 'P@ssw0rd';
+CREATE USER 'user2'@'localhost' IDENTIFIED BY 'P@ssw0rd';
+
+-- Раздаем права
+GRANT ALL PRIVILEGES ON lms_db.* TO 'admin'@'localhost';
+GRANT ALL PRIVILEGES ON lms_db.* TO 'manager1'@'localhost';
+GRANT ALL PRIVILEGES ON lms_db.* TO 'manager2'@'localhost';
+GRANT ALL PRIVILEGES ON lms_db.* TO 'manager3'@'localhost';
+GRANT ALL PRIVILEGES ON lms_db.* TO 'user1'@'localhost';
+GRANT ALL PRIVILEGES ON lms_db.* TO 'user2'@'localhost';
+GRANT ALL PRIVILEGES ON lms_db.* TO 'user3'@'localhost';
+GRANT ALL PRIVILEGES ON lms_db.* TO 'user4'@'localhost';
+GRANT ALL PRIVILEGES ON lms_db.* TO 'user5'@'localhost';
+GRANT ALL PRIVILEGES ON lms_db.* TO 'user6'@'localhost';
+GRANT ALL PRIVILEGES ON lms_db.* TO 'user7'@'localhost';
+
+
+-- Создаём роли
+GRANT 'Admin' TO 'admin'@'localhost';
+GRANT ‘Manager’ TO 'manager1'@'localhost';
+GRANT ‘Manager’ TO 'manager2'@'localhost';
+GRANT ‘Manager’ TO 'manager3'@'localhost';
+GRANT 'WS' TO 'user1'@'localhost';
+GRANT 'WS' TO 'user2'@'localhost';
+GRANT 'WS' TO 'user3'@'localhost';
+GRANT 'WS' TO 'user4'@'localhost';
+GRANT 'TEAM' TO 'user5'@'localhost';
+GRANT 'TEAM' TO 'user6'@'localhost';
+GRANT 'TEAM' TO 'user7'@'localhost';
+
+
+-- Активируем роли для пользователей
+SET DEFAULT ROLE 'Admin' FOR 'admin'@'localhost';
+SET DEFAULT ROLE ‘Manager’ FOR 'manager1'@'localhost';
+SET DEFAULT ROLE ‘Manager’ FOR 'manager2'@'localhost';
+SET DEFAULT ROLE ‘Manager’ FOR 'manager3'@'localhost';
+SET DEFAULT ROLE 'WS' FOR 'user1'@'localhost';
+SET DEFAULT ROLE 'WS' FOR 'user2'@'localhost';
+SET DEFAULT ROLE 'WS' FOR 'user3'@'localhost';
+SET DEFAULT ROLE 'WS' FOR 'user4'@'localhost';
+SET DEFAULT ROLE 'TEAM' FOR 'user5'@'localhost';
+SET DEFAULT ROLE 'TEAM' FOR 'user6'@'localhost';
+SET DEFAULT ROLE 'TEAM' FOR 'user7'@'localhost';
+
+FLUSH PRIVILEGES;
+EXIT;
+```
+### Настройка Apache
+Создадим конфигурационный файл для вашего сайта в Apache.
+```
+sudo nano /etc/apache2/sites-available/lms.conf
+```
+Добавьте в файл следующие строки:
+```
+<VirtualHost *:80>
+    ServerAdmin webmaster@localhost
+    DocumentRoot /var/www/html/lms
+    ServerName br-srv
+
+    <Directory /var/www/html/lms>
+        Options Indexes FollowSymLinks
+        AllowOverride All
+        Require all granted
+    </Directory>
+
+    ErrorLog ${APACHE_LOG_DIR}/error.log
+    CustomLog ${APACHE_LOG_DIR}/access.log combined
+</VirtualHost>
+```
+Активируем сайт и перезапускаем Apache:
+```
+sudo a2ensite lms.conf
+sudo systemctl reload apache2
+```
+### Создание главной страницы
+Создадим директорию для вашего сайта и добавим главную страницу с номером места.
+```
+sudo mkdir -p /var/www/html/lms
+sudo nano /var/www/html/lms/index.html
+```
+Добавьте в файл index.html следующий код:
+```
+<h1>НОМЕР 1</h1>
+```
+Так же можно открыть файл /var/html/index.html
+```
+В котором ищем текст любой со страницы localhost. и меняем его на свой номер!
+```
+### Проверка работы
+Откройте браузер и перейдите по адресу вашего сервера (например, http://br-srv или http://localhost/lms). Вы должны увидеть номер места на главной странице.
+Эти шаги помогут вам настроить веб-сервер Apache и базу данных MySQL для вашего LMS
+</details>
