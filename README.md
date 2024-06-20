@@ -40,7 +40,7 @@ net.ipv6.conf.all.forwarding=1 		для IPv6
 ```
 sudo sysctl -p
 ```
-Если метод не сработал можно попробовать 
+Есть команда для временного решения. Работает до перезагрузки. Чтобы все работало настраиваем frr.
 ```
 sudo sysctl -w net.ipv4.ip_forward=1
 ```
@@ -67,7 +67,7 @@ sudo apt-get install iptables-persistent Спросит сохранить ли,
 ```
 sudo netfilter-persistent save
 ```
-
+### Проблема с DNS
 На HQ-R и BR-R переводим интерфейсы, смотрящие в интернет, в состояние DOWN
 ```
 sudo ip link set <интерфейс> down
@@ -79,12 +79,17 @@ sudo nano /etc/systemd/resolved.conf
 где убираем # в строке DNS= и приводим ее к виду DNS=8.8.8.8
  
 Теперь перезагружаем службу resolved.service
-```
-Sudo systemctl restart systemd-resolved
-```
 
-Перезагружаем устройство
+```
+sudo systemctl restart systemd-resolved.service
 
+sudo systemctl start systemd-resolved
+
+sudo systemctl enable systemd-resolved
+
+sudo reboot
+
+```
 Проверяем, пингуется ли 8.8.8.8 или ya.ru с HQ-R и BR-R. Если всё успешно, то можем окончательно убрать сетевые мосты c HQ-R и BR-R из адаптеров VirtualBox.
 
 Для SRV устройств просто указываем IP, gateway и DNS 8.8.8.8. Делать это желательно в nmtui. Если что-то пошло не так, удаляем файлы конфигов
